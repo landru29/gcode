@@ -1,0 +1,19 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp:unconfined
+    hostname: app.local
+    ports:
+      - "8000:8000"
+    volumes:
+      - ..:/workspace:cached
+      - ${SSH_AUTH_SOCK}:/ssh-agent:ro
+    environment:
+      SSH_AUTH_SOCK: /ssh-agent
+    command: sleep infinity
+    working_dir: /workspace
