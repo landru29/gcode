@@ -1,6 +1,10 @@
 mod geometry;
+mod drawing;
 
 use clap::{Parser, Subcommand};
+
+use crate::geometry::starter::Starter;
+use crate::geometry::geometry::Entity;
 
 #[derive(Parser)]
 #[command(name = "gcode")]
@@ -12,27 +16,27 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Process a G-code file
-    Process {
-        /// Input file path
-        #[arg(value_name = "FILE")]
-        file: String,
+    /// Start a G-code script
+    Start {
+        #[arg(long, default_value_t = 5.0)]
+        security_z: f64,
+    },
 
-        /// Output file path (optional)
+    /// Finish a G-code script
+    Finish {
+        #[arg(long, default_value_t = 5.0)]
+        security_z: f64,
+    },
+
+    Path {
         #[arg(short, long)]
-        output: Option<String>,
-    },
-    /// Display G-code file information
-    Info {
-        /// File to analyze
-        #[arg(value_name = "FILE")]
-        file: String,
-    },
-    /// Validate G-code syntax
-    Validate {
-        /// File to validate
-        #[arg(value_name = "FILE")]
-        file: String,
+        dxf: String,
+
+        #[arg(long, default_value_t = 5.0)]
+        security_z: f64,
+
+        #[arg(short, long, default_value_t = 100.0)]
+        feed: f64,
     },
 }
 
@@ -40,17 +44,17 @@ fn main() {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Process { file, output } => {
-            println!("Processing file: {}", file);
-            if let Some(out) = output {
-                println!("Output will be saved to: {}", out);
-            }
+        Commands::Start { security_z } => {
+            let starter = Starter::new(security_z);
+            println!("{}", starter.to_gcode(0.0, false));
         }
-        Commands::Info { file } => {
-            println!("Getting information for: {}", file);
+        Commands::Finish { security_z } => {
+            let finisher = geometry::finisher::Finisher::new(security_z);
+            println!("{}", finisher.to_gcode(0.0, false));
         }
-        Commands::Validate { file } => {
-            println!("Validating: {}", file);
+        Commands::Path { dxf, security_z, feed } => {
+            let dxf_file = drawing::file::DxfFile::new(dxf).unwrap();
+            dxf_file.display();
         }
     }
 }

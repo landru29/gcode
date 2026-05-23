@@ -1,19 +1,19 @@
 use super::geometry::Entity;
 use super::point::Point;
 
-pub struct Start{
+pub struct Finisher{
     security_z: f64,
 }
 
-impl Start {
+impl Finisher {
     pub fn new(security_z: f64) -> Self {
         Self { security_z }
     }
 }
 
-impl Entity for Start {
+impl Entity for Finisher {
     fn to_gcode(&self, _speed: f64, _goto_start: bool) -> String {
-        format!("G90\nG21\nG0 Z{:.3}\n", self.security_z)
+        format!("G0 Z{:.3}\n", self.security_z)
     }
 
     fn end(&self) -> Point {
