@@ -1,0 +1,170 @@
+use clap::{Parser, Subcommand};
+
+use crate::application::drill::drill_sequence;
+use crate::application::path::path_sequence;
+use crate::errors::cli::CliError;
+use crate::models::entity::Entity;
+use crate::models::gcode::GCodePathOptions;
+use crate::drawing::file::DxfFile;
+
+#[derive(Parser)]
+#[command(name = "gcode")]
+#[command(about = "A CLI tool for G-code", long_about = None)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Start a G-code script
+    Start {
+        #[arg(long, default_value_t = 5.0)]
+        security_z: f64,
+    },
+
+    /// Finish a G-code script
+    Finish {
+        #[arg(long, default_value_t = 5.0)]
+        security_z: f64,
+    },
+
+    /// Information about a DXF
+    Info {
+        /// Path to the input DXF file
+        #[arg(short, long)]
+        dxf: String,
+
+        /// Pattern for layer filtering, e.g. "0" or "Layer*" or "*"
+        #[arg(long, default_value = "*")]
+        layer: String,
+
+        // Filter on entities (line, point, arc)
+        #[arg(long, value_delimiter=',')]
+        entities: Vec<String>,
+    },
+
+    /// Drill holes
+    Drill {
+        /// Path to the input DXF file
+        #[arg(short, long)]
+        dxf: String,
+
+        /// Safety height for non-cutting moves
+        #[arg(long, default_value_t = 5.0)]
+        security_z: f64,
+
+        /// Feed rate for cutting moves
+        #[arg(short, long, default_value_t = 100.0)]
+        feed: f64,
+
+        /// Pattern for layer filtering, e.g. "0" or "Layer*" or "*"
+        #[arg(long, default_value = "*")]
+        layer: String,
+
+        // Filter on entities (line, point, arc)
+        #[arg(long, value_delimiter=',')]
+        entities: Vec<String>,
+
+        /// Depth for cutting moves
+        #[arg(long, default_value_t = 1.0)]
+        deep: f64,
+
+        /// Step for cutting moves
+        #[arg(long, value_parser = clap::value_parser!(f64))]
+        step: Option<f64>,
+    },
+
+    /// Engrave a path
+    Path {
+        /// Path to the input DXF file
+        #[arg(short, long)]
+        dxf: String,
+
+        /// Safety height for non-cutting moves
+        #[arg(long, default_value_t = 5.0)]
+        security_z: f64,
+
+        /// Feed rate for cutting moves
+        #[arg(short, long, default_value_t = 100.0)]
+        feed: f64,
+
+        /// Pattern for layer filtering, e.g. "0" or "Layer*" or "*"
+        #[arg(long, default_value = "*")]
+        layer: String,
+
+        // Filter on entities (line, point, arc)
+        #[arg(long, value_delimiter=',')]
+        entities: Vec<String>,
+
+        /// Depth for cutting moves
+        #[arg(long, default_value_t = 1.0)]
+        deep: f64,
+
+        /// Step for cutting moves
+        #[arg(long, value_parser = clap::value_parser!(f64))]
+        step: Option<f64>,
+    },
+}
+
+pub fn start_cli() -> Result<(), CliError> {
+    let cli = Cli::parse();
+
+    match cli.command {
+        Commands::Start { security_z } => {
+            println!("{}", Entity::Starter.gcode_path(
+                GCodePathOptions::default()
+                    .with_security_z(security_z)
+            ));
+            Ok(())
+        }
+        Commands::Finish { security_z } => {
+            println!("{}", Entity::Finisher.gcode_path(
+                GCodePathOptions::default()
+                    .with_security_z(security_z)
+            ));
+            Ok(())
+        }
+        Commands::Info { dxf, layer, entities } => {
+            let mut dxf_file = DxfFile::new(dxf).map_err(|e| CliError::GenericError(format!("{}", e)))?;
+            dxf_file.load().map_err(|e| CliError::GenericError(format!("{}", e)))?;
+            let filtered_file = dxf_file.filter_layer(layer, entities).map_err(|e| CliError::GenericError(format!("{}", e)))?;
+            filtered_file.display();
+            Ok(())
+        },
+        Commands::Path { dxf, security_z, feed, layer, entities, deep, step } => {
+            let mut dxf_file = DxfFile::new(dxf).map_err(|e| CliError::GenericError(format!("{}", e)))?;
+            dxf_file.load().map_err(|e| CliError::GenericError(format!("{}", e)))?;
+            
+            let filtered_file = dxf_file.filter_layer(layer, entities).map_err(|e| CliError::GenericError(format!("{}", e)))?;
+            
+            let options = GCodePathOptions::default()
+                .with_security_z(security_z)
+                .with_feed(feed)
+                .with_goto_start()
+                .with_x()
+                .with_y()
+                .with_z();
+
+            println!("{}", path_sequence(filtered_file.entities()).generate_code(options, deep, step.unwrap_or(deep)));
+            Ok(())
+        }
+        Commands::Drill {dxf, security_z, feed, layer, entities, deep, step} => {
+            let mut dxf_file = DxfFile::new(dxf).map_err(|e| CliError::GenericError(format!("{}", e)))?;
+            dxf_file.load().map_err(|e| CliError::GenericError(format!("{}", e)))?;
+            
+            let filtered_file = dxf_file.filter_layer(layer, entities).map_err(|e| CliError::GenericError(format!("{}", e)))?;
+            
+            let options = GCodePathOptions::default()
+                .with_security_z(security_z)
+                .with_feed(feed)
+                .with_goto_start()
+                .with_x()
+                .with_y()
+                .with_z();
+
+            println!("{}", drill_sequence(filtered_file.entities()).generate_code(options, deep, step.unwrap_or(deep)));
+            Ok(())
+        }
+    }
+}

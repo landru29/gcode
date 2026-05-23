@@ -5,9 +5,9 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Path",
             "type": "lldb",
             "request": "launch",
-            "name": "Debug",
             "cargo": {
                 "args": [
                     "build",
@@ -19,8 +19,63 @@
                     "kind": "bin"
                 },
             },
-            "args": [],
+            "args": [
+                "path", 
+                "--dxf", "testdata/file.dxf", 
+                "--security-z", "5.0", 
+                "--feed", "100.0", 
+                "--entities", "line,arc",
+                "--deep", "10",
+                "--step", "3",
+                "--layer", "0"
+            ],
             "cwd": "${workspaceFolder}"
-        }
+        },
+        {
+            "name": "Drill",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=gcode",
+                    "--package=gcode"
+                ],
+                "filter": {
+                    "name": "gcode",
+                    "kind": "bin"
+                },
+            },
+            "args": [
+                "drill", 
+                "--dxf", "testdata/file.dxf", 
+                "--security-z", "5.0", 
+                "--feed", "100.0", 
+                "--entities", "point,line",
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Info",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=gcode",
+                    "--package=gcode"
+                ],
+                "filter": {
+                    "name": "gcode",
+                    "kind": "bin"
+                },
+            },
+            "args": [
+                "info", 
+                "--dxf", "testdata/file.dxf", 
+                "--entities", "line,arc",
+            ],
+            "cwd": "${workspaceFolder}"
+        },
     ]
 }
