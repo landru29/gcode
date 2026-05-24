@@ -1,4 +1,4 @@
-use crate::geometry::geometry::Entity;
+use super::geometry::Entity;
 
 #[derive(Clone, PartialEq)]
 pub struct Point {

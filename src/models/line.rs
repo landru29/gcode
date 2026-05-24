@@ -1,8 +1,7 @@
-use crate::geometry::{
+use super::{
     geometry::Entity, 
     point::Point,
 };
-
 #[derive(Clone)]
 pub struct Line {
     pub start: Point,

@@ -1,4 +1,4 @@
-use crate::geometry::geometry::Entity;
+use super::geometry::Entity;
 
 pub struct Multiline(Vec<Box<dyn Entity>>);
 
@@ -50,11 +50,11 @@ impl Multiline {
 }
 
 impl Entity for Multiline {
-    fn start(&self) -> crate::geometry::point::Point {
+    fn start(&self) -> crate::models::point::Point {
         self.0.first().unwrap().start()
     }
 
-    fn end(&self) -> crate::geometry::point::Point {
+    fn end(&self) -> crate::models::point::Point {
         self.0.last().unwrap().end()
     }
 

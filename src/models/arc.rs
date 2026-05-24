@@ -1,4 +1,4 @@
-use crate::geometry::{
+use super::{
     geometry::Entity,
     point::Point,
 };

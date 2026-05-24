@@ -1,10 +1,10 @@
-mod geometry;
+mod models;
 mod drawing;
 
 use clap::{Parser, Subcommand};
 
-use crate::geometry::starter::Starter;
-use crate::geometry::geometry::Entity;
+use crate::models::starter::Starter;
+use crate::models::geometry::Entity;
 
 #[derive(Parser)]
 #[command(name = "gcode")]
@@ -49,11 +49,12 @@ fn main() {
             println!("{}", starter.to_gcode(0.0, false));
         }
         Commands::Finish { security_z } => {
-            let finisher = geometry::finisher::Finisher::new(security_z);
+            let finisher = models::finisher::Finisher::new(security_z);
             println!("{}", finisher.to_gcode(0.0, false));
         }
         Commands::Path { dxf, security_z, feed } => {
-            let dxf_file = drawing::file::DxfFile::new(dxf).unwrap();
+            let mut dxf_file = drawing::file::DxfFile::new(dxf).unwrap();
+            dxf_file.load();
             dxf_file.display();
         }
     }
