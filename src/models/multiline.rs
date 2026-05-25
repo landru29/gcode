@@ -63,15 +63,15 @@ impl Entity for Multiline {
         Box::new(Self(reversed))
     }
 
-    fn to_gcode(&self, speed: f64, goto_start: bool) -> String {
-        let output = self.0.iter().map(|e| e.to_gcode(speed, goto_start)).collect();
-         if goto_start {
-            format!(
-                "G0 X{:.3} Y{:.3} Z{:.3}\n{}",
-                self.start().x, self.start().y, self.start().z, output
-            )
-        } else {
-            output
-        }
+    fn gcode_path(&self, gcode_options: super::gcode::GCodeOptions) -> String {
+        let starter = gcode_options.transition_to(&self.start());
+
+        let mut options = gcode_options.clone();
+
+        options.goto_start = false;
+
+        let output: String = self.0.iter().map(|e| e.gcode_path(options.clone())).collect();
+
+        format!("{}{}", starter, output)
     }
 }

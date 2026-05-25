@@ -1,16 +1,20 @@
 use super::{
     geometry::Entity, 
     point::Point,
+    gcode::GCodeOptions,
+    geometry::Layered,
 };
+
 #[derive(Clone)]
 pub struct Line {
+    pub layer: String,
     pub start: Point,
     pub end: Point,
 }
 
 impl Line {
-    pub fn new(start: Point, end: Point) -> Self {
-        Self { start, end }
+    pub fn new(start: Point, end: Point, layer: String) -> Self {
+        Self { start, end, layer }
     }
 }
 
@@ -27,22 +31,24 @@ impl Entity for Line {
         Box::new(Self {
             start: self.end.clone(),
             end: self.start.clone(),
+            layer: self.layer.clone(),
         })
     }
 
-    fn to_gcode(&self, speed: f64, goto_start: bool) -> String {
-        let starter = if goto_start {
-            format!(
-                "G0 X{:.3} Y{:.3} Z{:.3}\n",
-                self.start.x, self.start.y, self.start.z
-            )
-        } else {
-            "".to_string()
-        };
-        
+    fn gcode_path(&self, gcode_options: GCodeOptions) -> String {
         format!(
-            "{}G1 X{:.3} Y{:.3} Z{:.3} F{:.1}\n",
-            starter, self.end.x, self.end.y, self.end.z, speed
+            "{}G{} {}\n",
+            gcode_options.transition_to(&self.start()),
+            if gcode_options.feed > 0.0 { "1" } else { "0" },
+            gcode_options.parameters_string(&self.end())
         )
+    }
+
+
+}
+
+impl Layered for Line {
+    fn layer(&self) -> String {
+        self.layer.clone()
     }
 }

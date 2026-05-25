@@ -1,6 +1,7 @@
 use super::{
-    geometry::Entity,
+    geometry::{Entity, Layered},
     point::Point,
+    gcode::GCodeOptions,
 };
 
 #[derive(Clone)]
@@ -10,16 +11,18 @@ pub struct Arc {
     pub start_angle: f64,
     pub end_angle: f64,
     pub clockwise: bool,
+    pub layer: String,
 }
 
 impl Arc {
-    pub fn new(center: Point, radius: f64, start_angle: f64, end_angle: f64, clockwise: bool) -> Self {
+    pub fn new(center: Point, radius: f64, start_angle: f64, end_angle: f64, clockwise: bool, layer: String) -> Self {
         Self {
             center,
             radius,
             start_angle,
             end_angle,
             clockwise,
+            layer,
         }
     }
 }
@@ -31,6 +34,7 @@ impl  Entity for Arc {
             x: self.center.x + self.radius * self.start_angle.cos(),
             y: self.center.y + self.radius * self.start_angle.sin(),
             z: self.center.z,
+            layer: self.layer.clone(),
         }
     }
 
@@ -39,6 +43,7 @@ impl  Entity for Arc {
             x: self.center.x + self.radius * self.end_angle.cos(),
             y: self.center.y + self.radius * self.end_angle.sin(),
             z: self.center.z,
+            layer: self.layer.clone(),
         }
     }
 
@@ -49,18 +54,12 @@ impl  Entity for Arc {
             start_angle: self.end_angle,
             end_angle: self.start_angle,
             clockwise: !self.clockwise,
+            layer: self.layer.clone(),
         })
     }
 
-    fn to_gcode(&self, speed: f64, goto_start: bool) -> String {
-        let starter = if goto_start {
-            format!(
-                "G0 X{:.3} Y{:.3} Z{:.3}\n",
-                self.start().x, self.start().y, self.start().z
-            )
-        } else {
-            "".to_string()
-        };
+    fn gcode_path(&self, gcode_options: GCodeOptions) -> String {
+        let starter = gcode_options.transition_to(&self.start());
 
         if self.start_angle == self.end_angle {
             let arc1 = Self {
@@ -69,6 +68,7 @@ impl  Entity for Arc {
                 start_angle: self.start_angle,
                 end_angle: self.start_angle + std::f64::consts::PI,
                 clockwise: self.clockwise,
+                layer: self.layer.clone(),
             };
             // Full circle, use G2/G3 with the same start and end points
             let arc2 = Self {
@@ -77,22 +77,30 @@ impl  Entity for Arc {
                 start_angle: self.start_angle + std::f64::consts::PI,
                 end_angle: self.start_angle + 2.0 * std::f64::consts::PI,
                 clockwise: self.clockwise,
+                layer: self.layer.clone(),
             };
             format!(
                 "{}{}",
-                arc1.to_gcode(speed, false),
-                arc2.to_gcode(speed, false)
+                arc1.gcode_path(gcode_options.clone()),
+                arc2.gcode_path(gcode_options.clone())
             )
         } else {
-
-        let i = self.center.x - self.start().x;
-        let j = self.center.y - self.start().y;
-        format!(
-            "{} {} X{:.3} Y{:.3} I{:.3} J{:.3} F{:.1}\n",
-            starter,
-            if self.clockwise { "G2" } else { "G3" },
-            self.end().x, self.end().y, i, j, speed
-        )
+            let i = self.center.x - self.start().x;
+            let j = self.center.y - self.start().y;
+            format!(
+                "{} {} {} I{:.3} J{:.3}\n",
+                starter,
+                if self.clockwise { "G2" } else { "G3" },
+                gcode_options.parameters_string(&self.end()), 
+                i, 
+                j,
+            )
+        }
     }
+}
+
+impl Layered for Arc {
+    fn layer(&self) -> String {
+        self.layer.clone()
     }
 }

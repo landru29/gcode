@@ -1,3 +1,5 @@
+use crate::models::gcode::GCodeOptions;
+
 use super::geometry::Entity;
 use super::point::Point;
 
@@ -12,12 +14,12 @@ impl Finisher {
 }
 
 impl Entity for Finisher {
-    fn to_gcode(&self, _speed: f64, _goto_start: bool) -> String {
+    fn gcode_path(&self, _options: GCodeOptions) -> String {
         format!("G0 Z{:.3}\n", self.security_z)
     }
 
     fn end(&self) -> Point {
-        Point { x: 0.0, y: 0.0, z: self.security_z }
+        Point { x: 0.0, y: 0.0, z: self.security_z, layer: String::new() }
     }
 
     fn revert(&self) -> Box<dyn Entity> {
@@ -25,6 +27,6 @@ impl Entity for Finisher {
     }
 
     fn start(&self) -> Point {
-        Point { x: 0.0, y: 0.0, z: self.security_z }
+        Point { x: 0.0, y: 0.0, z: self.security_z, layer: String::new() }
     }
 }

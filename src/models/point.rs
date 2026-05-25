@@ -1,15 +1,19 @@
-use super::geometry::Entity;
+use super::{
+    geometry::{Entity, Layered},
+    gcode::GCodeOptions,
+};
 
 #[derive(Clone, PartialEq)]
 pub struct Point {
+    pub layer: String,
     pub x: f64,
     pub y: f64,
     pub z: f64,
 }
 
 impl Point {
-    pub fn new(x: f64, y: f64, z: f64) -> Self {
-        Self { x, y, z }
+    pub fn new(x: f64, y: f64, z: f64, layer: String) -> Self {
+        Self { x, y, z, layer }
     }
 }
 
@@ -26,19 +30,18 @@ impl Entity for Point {
         Box::new(self.clone())
     }
 
-    fn to_gcode(&self, speed: f64, goto_start: bool) -> String {
-        let starter = if goto_start {
-            format!(
-                "G0 X{:.3} Y{:.3} Z{:.3}\n",
-                self.x, self.y, self.z
-            )
-        } else {
-            "".to_string()
-        };
-
+    fn gcode_path(&self, gcode_options: GCodeOptions) -> String {
         format!(
-            "{}G1 X{:.3} Y{:.3} Z{:.3} F{:.1}\n",
-            starter, self.x, self.y, self.z, speed
+            "{}G{} {}\n",
+            gcode_options.transition_to(&self.start()),
+            if gcode_options.feed > 0.0 { "1" } else { "0" },
+            gcode_options.parameters_string(&self.end())
         )
+    }
+}
+
+impl Layered for Point {
+    fn layer(&self) -> String {
+        self.layer.clone()
     }
 }
