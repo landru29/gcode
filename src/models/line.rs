@@ -1,8 +1,8 @@
 use super::{
     geometry::Entity, 
     point::Point,
-    gcode::GCodeOptions,
-    geometry::Layered,
+    gcode::GCodePathOptions,
+    geometry::Filtered,
 };
 
 #[derive(Clone)]
@@ -35,7 +35,7 @@ impl Entity for Line {
         })
     }
 
-    fn gcode_path(&self, gcode_options: GCodeOptions) -> String {
+    fn gcode_path(&self, gcode_options: GCodePathOptions) -> String {
         format!(
             "{}G{} {}\n",
             gcode_options.transition_to(&self.start()),
@@ -47,8 +47,12 @@ impl Entity for Line {
 
 }
 
-impl Layered for Line {
+impl Filtered for Line {
     fn layer(&self) -> String {
         self.layer.clone()
+    }
+
+    fn entity_type(&self) -> String {
+        "line".to_string()
     }
 }

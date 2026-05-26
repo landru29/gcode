@@ -7,3 +7,4 @@ pub mod starter;
 pub mod finisher;
 pub mod dxf;
 pub mod gcode;
+pub mod goto;

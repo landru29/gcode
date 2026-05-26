@@ -1,6 +1,6 @@
 use super::{
-    geometry::{Entity, Layered},
-    gcode::GCodeOptions,
+    geometry::{Entity, Filtered},
+    gcode::GCodePathOptions,
 };
 
 #[derive(Clone, PartialEq)]
@@ -15,14 +15,27 @@ impl Point {
     pub fn new(x: f64, y: f64, z: f64, layer: String) -> Self {
         Self { x, y, z, layer }
     }
+
+    pub fn square_distance(&self, other: &Self) -> f64 {
+        (self.x - other.x) * (self.x - other.x) +
+        (self.y - other.y) * (self.y - other.y) +
+        (self.z - other.z) * (self.z - other.z)
+    }
+
+    pub fn with_z(&self, z: f64) -> Self {
+        let mut output = self.clone();
+        output.z = z;
+
+        output
+    }
 }
 
 impl Entity for Point {
-    fn start(&self) -> Point {
+    fn start(&self) -> Self {
         self.clone()
     }
 
-    fn end(&self) -> Point {
+    fn end(&self) -> Self {
         self.clone()
     }
 
@@ -30,7 +43,7 @@ impl Entity for Point {
         Box::new(self.clone())
     }
 
-    fn gcode_path(&self, gcode_options: GCodeOptions) -> String {
+    fn gcode_path(&self, gcode_options: GCodePathOptions) -> String {
         format!(
             "{}G{} {}\n",
             gcode_options.transition_to(&self.start()),
@@ -40,8 +53,12 @@ impl Entity for Point {
     }
 }
 
-impl Layered for Point {
+impl Filtered for Point {
     fn layer(&self) -> String {
         self.layer.clone()
+    }
+
+    fn entity_type(&self) -> String {
+        "point".to_string()
     }
 }

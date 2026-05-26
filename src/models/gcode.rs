@@ -1,5 +1,5 @@
 #[derive(Clone)]
-pub struct GCodeOptions{
+pub struct GCodePathOptions{
     pub feed: f64,
     pub security_z: f64,
     pub goto_start: bool,
@@ -9,10 +9,10 @@ pub struct GCodeOptions{
     pub arc_center: Option<(f64, f64)>,
 }
 
-type Configurator = Box<dyn Fn(&mut GCodeOptions)>;
+type PathConfigurator = Box<dyn Fn(&mut GCodePathOptions)>;
 
-impl GCodeOptions {
-    pub fn new(configurators: &Vec<Configurator>) -> Self {
+impl GCodePathOptions {
+    pub fn new(configurators: &Vec<PathConfigurator>) -> Self {
         let mut options = Self {
             feed: 0.0,
             goto_start: false,
@@ -28,7 +28,7 @@ impl GCodeOptions {
         options
     }
 
-    pub fn with_arc_center(x: &f64, y: &f64) -> Configurator {
+    pub fn with_arc_center(x: &f64, y: &f64) -> PathConfigurator {
         let x = x.clone();
         let y = y.clone();
         Box::new(move |options: &mut Self| {
@@ -36,39 +36,39 @@ impl GCodeOptions {
         })
     }
 
-    pub fn with_feed(feed: &f64) -> Configurator {
+    pub fn with_feed(feed: &f64) -> PathConfigurator {
         let feed = feed.clone();
         Box::new(move |options: &mut Self| {
             options.feed = feed;
         })
     }
 
-    pub fn with_security_z(security_z: &f64) -> Configurator {
+    pub fn with_security_z(security_z: &f64) -> PathConfigurator {
         let security_z = security_z.clone();
         Box::new(move |options: &mut Self| {
             options.security_z = security_z;
         })
     }
 
-    pub fn with_x() -> Configurator {
+    pub fn with_x() -> PathConfigurator {
         Box::new(|options: &mut Self| {
             options.with_x = true;
         })
     }
 
-    pub fn with_y() -> Configurator {
+    pub fn with_y() -> PathConfigurator {
         Box::new(|options: &mut Self| {
             options.with_y = true;
         })
     }
 
-    pub fn with_z() -> Configurator {
+    pub fn with_z() -> PathConfigurator {
         Box::new(|options: &mut Self| {
             options.with_z = true;
         })
     }
 
-    pub fn with_goto_start() -> Configurator {
+    pub fn with_goto_start() -> PathConfigurator {
         Box::new(|options: &mut Self| {
             options.goto_start = true;
         })
@@ -115,6 +115,7 @@ impl GCodeOptions {
         params.join(" ").to_string()
     }
 }
+
 
 // Utility function to generate an array of steps from 0 to deep with a given step size
 pub fn step_array(deep: f64, step: f64) -> Vec<f64> {

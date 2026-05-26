@@ -63,7 +63,7 @@ impl Entity for Multiline {
         Box::new(Self(reversed))
     }
 
-    fn gcode_path(&self, gcode_options: super::gcode::GCodeOptions) -> String {
+    fn gcode_path(&self, gcode_options: super::gcode::GCodePathOptions) -> String {
         let starter = gcode_options.transition_to(&self.start());
 
         let mut options = gcode_options.clone();

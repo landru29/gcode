@@ -1,7 +1,7 @@
 use super::{
-    geometry::{Entity, Layered},
+    geometry::{Entity, Filtered},
     point::Point,
-    gcode::GCodeOptions,
+    gcode::GCodePathOptions,
 };
 
 #[derive(Clone)]
@@ -58,7 +58,7 @@ impl  Entity for Arc {
         })
     }
 
-    fn gcode_path(&self, gcode_options: GCodeOptions) -> String {
+    fn gcode_path(&self, gcode_options: GCodePathOptions) -> String {
         let starter = gcode_options.transition_to(&self.start());
 
         if self.start_angle == self.end_angle {
@@ -99,8 +99,12 @@ impl  Entity for Arc {
     }
 }
 
-impl Layered for Arc {
+impl Filtered for Arc {
     fn layer(&self) -> String {
         self.layer.clone()
+    }
+
+        fn entity_type(&self) -> String {
+        "arc".to_string()
     }
 }

@@ -1,32 +1,30 @@
-use crate::models::gcode::GCodeOptions;
+use crate::models::gcode::GCodePathOptions;
 
 use super::geometry::Entity;
 use super::point::Point;
 
-pub struct Finisher{
-    security_z: f64,
-}
+pub struct Finisher{}
 
 impl Finisher {
-    pub fn new(security_z: f64) -> Self {
-        Self { security_z }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 
 impl Entity for Finisher {
-    fn gcode_path(&self, _options: GCodeOptions) -> String {
-        format!("G0 Z{:.3}\n", self.security_z)
+    fn gcode_path(&self, options: GCodePathOptions) -> String {
+        format!("; ending\nG0 Z{:.3}\n", options.security_z)
     }
 
     fn end(&self) -> Point {
-        Point { x: 0.0, y: 0.0, z: self.security_z, layer: String::new() }
+        Point { x: 0.0, y: 0.0, z: 0.0, layer: String::new() }
     }
 
     fn revert(&self) -> Box<dyn Entity> {
-        Box::new(Self::new(self.security_z))
+        Box::new(Self::new())
     }
 
     fn start(&self) -> Point {
-        Point { x: 0.0, y: 0.0, z: self.security_z, layer: String::new() }
+        Point { x: 0.0, y: 0.0, z: 0.0, layer: String::new() }
     }
 }

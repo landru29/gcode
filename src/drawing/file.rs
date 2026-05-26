@@ -7,7 +7,8 @@ use crate::models::{
     dxf::Layered,
     line::Line,
     point::Point,
-    geometry::Layered as GeoLayered,
+    geometry::Filtered,
+    geometry::Entity as ModelEntity,
 };
 
 use crate::errors::load::LoaderError;
@@ -117,14 +118,14 @@ impl DxfFile {
         
     }
 
-    pub fn filter_layer(&mut self, layer_criteria: String) -> Result<Self, LoaderError> {
+    pub fn filter_layer(&mut self, layer_criteria: String, entity_filter: Vec<String>) -> Result<Self, LoaderError> {
         let mut filtered = self.clone();
 
         match Pattern::new(layer_criteria.as_str()) {
             Ok(pattern) => {
-                filtered.lines = filter_by_criteria(filtered.lines, &pattern);
-                filtered.arcs = filter_by_criteria(filtered.arcs, &pattern);
-                filtered.points = filter_by_criteria(filtered.points, &pattern);
+                filtered.lines = filter_by_criteria(filtered.lines, &pattern, &entity_filter);
+                filtered.arcs = filter_by_criteria(filtered.arcs, &pattern, &entity_filter);
+                filtered.points = filter_by_criteria(filtered.points, &pattern, &entity_filter);
 
                 Ok(filtered)
             },
@@ -150,15 +151,42 @@ impl DxfFile {
             println!("#{} => Point: ({:.2}, {:.2}, {:.2})", point.layer, point.x, point.y, point.z);
         }
     }
+
+    pub fn entities(&self) -> Vec<Box<dyn ModelEntity>> {
+        let mut output : Vec<Box<dyn ModelEntity>> = vec![];
+        for arc in &self.arcs {
+            output.push(Box::new(arc.clone()));
+        }
+
+        for line in &self.lines {
+            output.push(Box::new(line.clone()));
+        }
+
+        for point in &self.points {
+            output.push(Box::new(point.clone()));
+        }
+        
+        output
+    }
 }
 
 
-fn match_criteria(layer: &str, pattern: &Pattern) -> bool {
-    pattern.matches(layer)
+fn match_criteria(name: &str, pattern: &Pattern) -> bool {
+    pattern.matches(name)
 }
 
-fn filter_by_criteria<T: GeoLayered>(data: Vec<T>, pattern: &Pattern) -> Vec<T> {
+fn has_name(name: &String, list: &Vec<String>) -> bool {
+    if list.is_empty() {
+        true
+    } else {
+        list.contains(name)
+    }
+}
+
+fn filter_by_criteria<T: Filtered>(data: Vec<T>, pattern: &Pattern, entity_filter: &Vec<String>) -> Vec<T> {
     data.into_iter()
-        .filter(|item| match_criteria(&item.layer(), &pattern))
+        .filter(|item| {
+            match_criteria(&item.layer(), &pattern) && has_name(&item.entity_type(), entity_filter)
+        })
         .collect()
 }

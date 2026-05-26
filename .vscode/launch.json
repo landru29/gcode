@@ -5,9 +5,9 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Path",
             "type": "lldb",
             "request": "launch",
-            "name": "DXF",
             "cargo": {
                 "args": [
                     "build",
@@ -19,7 +19,37 @@
                     "kind": "bin"
                 },
             },
-            "args": ["path", "--dxf", "testdata/file.dxf", "--security-z", "5.0", "--feed", "100.0"],
+            "args": [
+                "path", 
+                "--dxf", "testdata/file.dxf", 
+                "--security-z", "5.0", 
+                "--feed", "100.0", 
+                "--entities", "point,arc",
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Drill",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=gcode",
+                    "--package=gcode"
+                ],
+                "filter": {
+                    "name": "gcode",
+                    "kind": "bin"
+                },
+            },
+            "args": [
+                "drill", 
+                "--dxf", "testdata/file.dxf", 
+                "--security-z", "5.0", 
+                "--feed", "100.0", 
+                "--entities", "point,line",
+            ],
             "cwd": "${workspaceFolder}"
         }
     ]

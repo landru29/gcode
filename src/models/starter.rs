@@ -1,7 +1,7 @@
 use super::{
     point::Point,
     geometry::Entity,
-    gcode::GCodeOptions,
+    gcode::GCodePathOptions,
 };
 
 pub struct Starter{}
@@ -13,8 +13,8 @@ impl Starter {
 }
 
 impl Entity for Starter {
-    fn gcode_path(&self, _options: GCodeOptions) -> String {
-        format!("G90\nG21\nG0 Z{:.3}\n", _options.security_z)
+    fn gcode_path(&self, options: GCodePathOptions) -> String {
+        format!("; starting\nG90\nG21\nG0 Z{:.3}\n", options.security_z)
     }
 
     fn end(&self) -> Point {
