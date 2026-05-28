@@ -1,7 +1,9 @@
 use super::{
     entity::Entity,
+};
+
+use super::{
     filter::Filtered,
-    gcode::GCodePathOptions,
 };
 
 #[derive(Clone, PartialEq, Default)]
@@ -17,7 +19,7 @@ impl Point {
         Self { x, y, z, layer }
     }
 
-    pub fn square_distance<T: Entity>(&self, other: &T) -> f64 {
+    pub fn square_distance(&self, other: &Entity) -> f64 {
         (self.x - other.start().x) * (self.x - other.start().x) +
         (self.y - other.start().y) * (self.y - other.start().y) +
         (self.z - other.start().z) * (self.z - other.start().z).min(
@@ -32,29 +34,6 @@ impl Point {
         output.z = z;
 
         output
-    }
-}
-
-impl Entity for Point {
-    fn start(&self) -> Self {
-        self.clone()
-    }
-
-    fn end(&self) -> Self {
-        self.clone()
-    }
-
-    fn revert(&self) -> Box<dyn Entity> {
-        Box::new(self.clone())
-    }
-
-    fn gcode_path(&self, gcode_options: GCodePathOptions) -> String {
-        format!(
-            "{}G{} {}\n",
-            gcode_options.transition_to(&self.start()),
-            if gcode_options.feed > 0.0 { "1" } else { "0" },
-            gcode_options.parameters_string(&self.end())
-        )
     }
 }
 

@@ -3,10 +3,8 @@ use clap::{Parser, Subcommand};
 use crate::application::drill::drill_gcode;
 use crate::application::path::path_gcode;
 use crate::errors::cli::CliError;
-use crate::models::gcode::GCodePathOptions;
-use crate::models::starter::Starter;
 use crate::models::entity::Entity;
-use crate::models::finisher::Finisher;
+use crate::models::gcode::GCodePathOptions;
 use crate::drawing::file::DxfFile;
 
 #[derive(Parser)]
@@ -110,16 +108,14 @@ pub fn start_cli() -> Result<(), CliError> {
 
     match cli.command {
         Commands::Start { security_z } => {
-            let starter = Starter::default();
-            println!("{}", starter.gcode_path(
+            println!("{}", Entity::Starter.gcode_path(
                 GCodePathOptions::default()
                     .with_security_z(security_z)
             ));
             Ok(())
         }
         Commands::Finish { security_z } => {
-            let finisher = Finisher::default();
-            println!("{}", finisher.gcode_path(
+            println!("{}", Entity::Finisher.gcode_path(
                 GCodePathOptions::default()
                     .with_security_z(security_z)
             ));
@@ -136,12 +132,12 @@ pub fn start_cli() -> Result<(), CliError> {
             let mut dxf_file = DxfFile::new(dxf).map_err(|e| CliError::GenericError(format!("{}", e)))?;
             dxf_file.load().map_err(|e| CliError::GenericError(format!("{}", e)))?;
             let filtered_file = dxf_file.filter_layer(layer, entities).map_err(|e| CliError::GenericError(format!("{}", e)))?;
-            println!("{}", path_gcode(filtered_file.entities(), security_z, feed, deep));
+            println!("{}", path_gcode(&filtered_file.entities(), security_z, feed, deep));
             Ok(())
         }
         Commands::Drill {dxf, security_z, feed, layer, entities, deep} => {
-            let mut dxf_file = DxfFile::new(dxf).map_err(|e| CliError::GenericError(format!("{}", e)))?;;
-            dxf_file.load().map_err(|e| CliError::GenericError(format!("{}", e)))?;;
+            let mut dxf_file = DxfFile::new(dxf).map_err(|e| CliError::GenericError(format!("{}", e)))?;
+            dxf_file.load().map_err(|e| CliError::GenericError(format!("{}", e)))?;
             let filtered_file = dxf_file.filter_layer(layer, entities).map_err(|e| CliError::GenericError(format!("{}", e)))?;
             println!("{}", drill_gcode(filtered_file.entities(), security_z, feed, deep));
             Ok(())

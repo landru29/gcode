@@ -1,5 +1,4 @@
 use super::{
-    entity::Entity,
     filter::Filtered,
     point::Point,
     gcode::GCodePathOptions,
@@ -26,10 +25,7 @@ impl Arc {
             layer,
         }
     }
-}
 
-
-impl  Entity for Arc {
     fn start(&self) -> Point {
         Point {
             x: self.center.x + self.radius * self.start_angle.cos(),
@@ -48,18 +44,7 @@ impl  Entity for Arc {
         }
     }
 
-    fn revert(&self) -> Box<dyn Entity> {
-        Box::new(Self {
-            center: self.center.clone(),
-            radius: self.radius,
-            start_angle: self.end_angle,
-            end_angle: self.start_angle,
-            clockwise: !self.clockwise,
-            layer: self.layer.clone(),
-        })
-    }
-
-    fn gcode_path(&self, gcode_options: GCodePathOptions) -> String {
+    pub fn gcode_path(&self, gcode_options: GCodePathOptions) -> String {
         let starter = gcode_options.transition_to(&self.start());
 
         if self.start_angle == self.end_angle {
@@ -89,7 +74,7 @@ impl  Entity for Arc {
             let i = self.center.x - self.start().x;
             let j = self.center.y - self.start().y;
             format!(
-                "{} {} {} I{:.3} J{:.3}\n",
+                "{}{} {} I{:.3} J{:.3}\n",
                 starter,
                 if self.clockwise { "G2" } else { "G3" },
                 gcode_options.parameters_string(&self.end()), 

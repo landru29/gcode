@@ -6,15 +6,9 @@ pub struct GCodePathOptions{
     pub with_x: bool,
     pub with_y: bool,
     pub with_z: bool,
-    pub arc_center: Option<(f64, f64)>,
 }
 
 impl GCodePathOptions {
-    pub fn with_arc_center(mut self, x: f64, y: f64) -> Self {
-        self.arc_center = Some((x, y));
-        self
-    }
-
     pub fn with_feed(mut self, feed: f64) -> Self {
         self.feed = feed;
         self
@@ -45,12 +39,17 @@ impl GCodePathOptions {
         self
     }
 
+    pub fn without_goto_start(mut self) -> Self {
+        self.goto_start = false;
+        self
+    }
+
     pub fn transition_to(&self, point: &super::point::Point) -> String {
         if !self.goto_start {
             return "".to_string();
         }
 
-        format!("G0 Z{:.3}\nG0 X{:.3} Y{:.3}\nG1 Z{:.3} F{:.1}", self.security_z, point.x, point.y, point.z, self.feed)
+        format!("G0 Z{:.3}\nG0 X{:.3} Y{:.3}\nG1 Z{:.3} F{:.1}\n", self.security_z, point.x, point.y, point.z, self.feed)
     }
 
 
@@ -71,16 +70,6 @@ impl GCodePathOptions {
 
         if self.feed > 0.0 {
             params.push(format!("F{:.1}", self.feed));
-        }
-
-        match self.arc_center {
-            Some((i, j)) => {
-                vec![
-                    format!("I{:.3}", i), 
-                    format!("J{:.3}", j),
-                ].iter().for_each(|param| params.push(param.clone()));
-            },
-            None => {}
         }
 
         params.join(" ").to_string()

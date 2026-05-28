@@ -2,13 +2,14 @@ use dxf::Drawing;
 use dxf::entities::*;
 use glob::Pattern;
 
+use crate::models::entity::Entity;
+use crate::models::entity_set::EntitySet;
 use crate::models::{
     arc::Arc,
     dxf::Layered,
     line::Line,
     point::Point,
     filter::Filtered,
-    entity::Entity as ModelEntity,
 };
 
 use crate::errors::load::LoaderError;
@@ -152,18 +153,18 @@ impl DxfFile {
         }
     }
 
-    pub fn entities(&self) -> Vec<Box<dyn ModelEntity>> {
-        let mut output : Vec<Box<dyn ModelEntity>> = vec![];
+    pub fn entities(&self) -> EntitySet {
+        let mut output = EntitySet::default();
         for arc in &self.arcs {
-            output.push(Box::new(arc.clone()));
+            output.push(Entity::Arc(arc.clone()));
         }
 
         for line in &self.lines {
-            output.push(Box::new(line.clone()));
+            output.push(Entity::Line(line.clone()));
         }
 
         for point in &self.points {
-            output.push(Box::new(point.clone()));
+            output.push(Entity::Point(point.clone()));
         }
         
         output

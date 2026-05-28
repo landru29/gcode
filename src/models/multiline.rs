@@ -1,5 +1,6 @@
-use super::entity::Entity;
 use thiserror::Error;
+
+use crate::models::entity::Entity;
 
 #[derive(Error, Debug)]
 pub enum MultilineError {
@@ -15,12 +16,24 @@ pub enum InsertionMode{
     None,
 }
 
-#[derive(Default)]
-pub struct Multiline(Vec<Box<dyn Entity>>);
+#[derive(Default, Clone)]
+pub struct Multiline(Vec<Entity>);
+
+impl From<Vec<Entity>> for Multiline {
+    fn from(value: Vec<Entity>) -> Self {
+        Self(value)
+    }
+}
+
+impl Into<Vec<Entity>> for Multiline {
+    fn into(self) -> Vec<Entity> {
+        self.0
+    }
+}
 
 
 impl Multiline {
-    pub fn can_insert(&self, entity: &Box<dyn Entity>) -> InsertionMode {
+    pub fn can_insert(&self, entity: Entity) -> InsertionMode {
         match self.0.last() {
             Some(last) => {
                 if last.end() == entity.start() {
@@ -37,7 +50,7 @@ impl Multiline {
         }
     }
 
-    fn can_insert_at_start(&self, entity: &Box<dyn Entity>)-> InsertionMode {
+    fn can_insert_at_start(&self, entity: Entity)-> InsertionMode {
          match self.0.first() {
             Some(first) => {
                 if first.start() == entity.end() {
@@ -54,10 +67,10 @@ impl Multiline {
         }
     }
 
-    pub fn add_entity(&mut self, entity: Box<dyn Entity>) -> Result<(), MultilineError> {
-        match self.can_insert_at_start(&entity) {
+    pub fn add_entity(&mut self, entity: Entity) -> Result<(), MultilineError> {
+        match self.can_insert(entity.clone()) {
             InsertionMode::InsertAtEnd => {
-                self.0.push(entity);
+                self.0.push(entity.clone());
                 Ok(())
             }
             InsertionMode::RevertAndInsertAtEnd => {
@@ -75,31 +88,12 @@ impl Multiline {
             InsertionMode::None => Err(MultilineError::NotContiguousEntities)
         }
     }
-}
 
-impl Entity for Multiline {
-    fn start(&self) -> crate::models::point::Point {
+    pub fn start(&self) -> crate::models::point::Point {
         self.0.first().unwrap().start()
     }
 
-    fn end(&self) -> crate::models::point::Point {
+    pub fn end(&self) -> crate::models::point::Point {
         self.0.last().unwrap().end()
-    }
-
-    fn revert(&self) -> Box<dyn Entity> {
-        let reversed = self.0.iter().rev().map(|e| e.revert()).collect::<Vec<_>>();
-        Box::new(Self(reversed))
-    }
-
-    fn gcode_path(&self, gcode_options: super::gcode::GCodePathOptions) -> String {
-        let starter = gcode_options.transition_to(&self.start());
-
-        let mut options = gcode_options.clone();
-
-        options.goto_start = false;
-
-        let output: String = self.0.iter().map(|e| e.gcode_path(options.clone())).collect();
-
-        format!("{}{}", starter, output)
     }
 }

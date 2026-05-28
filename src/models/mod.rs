@@ -1,11 +1,9 @@
+pub mod entity_set;
 pub mod entity;
 pub mod line;
 pub mod arc;
 pub mod point;
 pub mod multiline;
-pub mod starter;
-pub mod finisher;
 pub mod dxf;
 pub mod gcode;
-pub mod goto;
 pub mod filter;

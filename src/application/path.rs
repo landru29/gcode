@@ -1,26 +1,25 @@
 use crate::{
-    application::sort::nearest_dyn_entity, 
+    application::sort::nearest_entity,
     models::{
-        entity::{Entity, EntitySet}, 
-        finisher::Finisher, 
-        gcode::GCodePathOptions, 
-        multiline::{InsertionMode, Multiline}, 
-        point::Point, 
-        starter::Starter,
+        entity::Entity,
+        entity_set::EntitySet,
+        gcode::GCodePathOptions,
+        multiline::{InsertionMode, Multiline},
+        point::Point,
     }
 };
 
 
-pub fn path_gcode(entities: impl IntoIterator<Item = Box<dyn Entity>>, security_z: f64, feed: f64, deep: f64) -> String {
+pub fn path_gcode(entities: &EntitySet, security_z: f64, feed: f64, deep: f64) -> String {
     let mut output = EntitySet::default();
 
-    output.push(Box::new(Starter::default()));
+    output.push(Entity::Starter);
 
     for multiline in  build_path(entities) {
-        output.push(Box::new(multiline));
+        output.push(Entity::Multiline(multiline));
     }
 
-    output.push(Box::new(Finisher::default()));
+    output.push(Entity::Finisher);
 
 
     output.gcode_path(
@@ -34,23 +33,19 @@ pub fn path_gcode(entities: impl IntoIterator<Item = Box<dyn Entity>>, security_
     )
 }
 
-
-fn build_path(entities: impl IntoIterator<Item = Box<dyn Entity>>) -> Vec<Multiline> {
+fn build_path(entities: &EntitySet) -> Vec<Multiline> {
     let mut output: Vec<Multiline> = vec![];
-
-    let mut entities: Vec<Box<dyn Entity>> = entities.into_iter().map(|element| element).collect();
-
     let mut reference = Point::new(0.0, 0.0, 0.0, "".to_string());
-    
-    while entities.len()>0 {
-        match extract_multiline(reference.clone(), entities) {
-            Some(multiline) => {
+    let mut entities = entities.clone();
+
+    while !entities.is_empty() {
+        match extract_multiline(reference.clone(), entities.clone()) {
+            Some((multiline, remaining)) => {
                 reference = multiline.end();
                 output.push(multiline);
-            },
-            None => {
-                return output
+                entities = remaining;
             }
+            _ => {}
         };
     }
 
@@ -58,28 +53,36 @@ fn build_path(entities: impl IntoIterator<Item = Box<dyn Entity>>) -> Vec<Multil
 }
 
 
-fn extract_multiline(start: Point, mut entities: Vec<Box<dyn Entity>>) -> Option<Multiline> {
-    if entities.len() == 0 {
+fn extract_multiline(start: Point, working_list: EntitySet) -> Option<(Multiline, EntitySet)> {
+     if working_list.len() == 0 {
         None
     } else {
         let mut output = Multiline::default();
-
         let mut reference = start.clone();
+        let mut list: Vec<Entity> = working_list.clone().into();
 
-        while entities.len()>0 {
-            entities.sort_by(|a, b| nearest_dyn_entity(&reference, a, b));
+        while !working_list.is_empty() {
+            list.sort_by(|a, b| nearest_entity(&reference, a.clone(), b.clone()));
 
-            let entity = entities.drain(0..1).next().unwrap();
-            reference = entity.end();
-
-            match output.can_insert(&entity) {
-                InsertionMode::None => return Some(output),
-                _ => {
-                    output.add_entity(entity)
-                }
+            
+            match list.first() {
+                None => return Some((output, EntitySet::from(list))),
+                Some(first) => {
+                    match output.can_insert(first.clone()) {
+                         InsertionMode::None => return Some((output, EntitySet::from(list))),
+                         _ => {
+                            let entity = list.remove(0);
+                            reference = entity.end();
+                            match output.add_entity(entity) {
+                                Err(_) => return Some((output, EntitySet::from(list))),
+                                _ => {},
+                            }
+                         },
+                    };
+                },
             };
-        }
+        };
 
-        Some(output)
+        None
     }
 }
