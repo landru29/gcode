@@ -1,15 +1,11 @@
 use crate::models::gcode::GCodePathOptions;
 
-use super::geometry::Entity;
+use super::entity::Entity;
 use super::point::Point;
 
+#[derive(Default)]
 pub struct Finisher{}
 
-impl Finisher {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 
 impl Entity for Finisher {
     fn gcode_path(&self, options: GCodePathOptions) -> String {
@@ -21,7 +17,7 @@ impl Entity for Finisher {
     }
 
     fn revert(&self) -> Box<dyn Entity> {
-        Box::new(Self::new())
+        Box::new(Self::default())
     }
 
     fn start(&self) -> Point {

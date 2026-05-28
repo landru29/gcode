@@ -7,8 +7,8 @@ use crate::models::{
     dxf::Layered,
     line::Line,
     point::Point,
-    geometry::Filtered,
-    geometry::Entity as ModelEntity,
+    filter::Filtered,
+    entity::Entity as ModelEntity,
 };
 
 use crate::errors::load::LoaderError;

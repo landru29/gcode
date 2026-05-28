@@ -1,16 +1,12 @@
 use super::{
     point::Point,
-    geometry::Entity,
+    entity::Entity,
     gcode::GCodePathOptions,
 };
 
+#[derive(Default)]
 pub struct Starter{}
 
-impl Starter {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 
 impl Entity for Starter {
     fn gcode_path(&self, options: GCodePathOptions) -> String {
@@ -22,7 +18,7 @@ impl Entity for Starter {
     }
 
     fn revert(&self) -> Box<dyn Entity> {
-        Box::new(Self::new())
+        Box::new(Self::default())
     }
 
     fn start(&self) -> Point {

@@ -1,10 +1,10 @@
 use super::{
-    geometry::{Entity, Filtered},
+    entity::Entity,
     point::Point,
     gcode::GCodePathOptions,
 };
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Default)]
 pub struct Goto(Point);
 
 impl Goto {

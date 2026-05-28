@@ -1,10 +1,11 @@
 use super::{
-    geometry::{Entity, Filtered},
+    entity::Entity,
+    filter::Filtered,
     point::Point,
     gcode::GCodePathOptions,
 };
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Arc {
     pub center: Point,
     pub radius: f64,

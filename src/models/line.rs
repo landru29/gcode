@@ -1,11 +1,11 @@
 use super::{
-    geometry::Entity, 
+    entity::Entity, 
     point::Point,
     gcode::GCodePathOptions,
-    geometry::Filtered,
+    filter::Filtered,
 };
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Line {
     pub layer: String,
     pub start: Point,

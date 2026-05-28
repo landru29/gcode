@@ -1,50 +1,78 @@
-use super::geometry::Entity;
+use super::entity::Entity;
+use thiserror::Error;
 
+#[derive(Error, Debug)]
+pub enum MultilineError {
+    #[error("entities are not contiguous")]
+    NotContiguousEntities, 
+}
+
+pub enum InsertionMode{
+    InsertAtEnd,
+    RevertAndInsertAtEnd,
+    InsertAtStart,
+    RevertAndInsertAtStart,
+    None,
+}
+
+#[derive(Default)]
 pub struct Multiline(Vec<Box<dyn Entity>>);
 
 
 impl Multiline {
-    pub fn new() -> Self {
-        Self(Vec::new())
-    }
-
-    pub fn add_entity(&mut self, entity: Box<dyn Entity>) -> Option<()> {
+    pub fn can_insert(&self, entity: &Box<dyn Entity>) -> InsertionMode {
         match self.0.last() {
             Some(last) => {
                 if last.end() == entity.start() {
-                    self.0.push(entity);
-                    Some(())
+                    InsertionMode::InsertAtEnd
                 } else if last.end() == entity.end() {
-                    self.0.push(entity.revert());
-                    Some(())
+                    InsertionMode::RevertAndInsertAtEnd
                 } else {
-                    self.pre_add_entity(entity)
+                    self.can_insert_at_start(entity)
                 }
             }
             None => {
-                self.0.push(entity);
-                Some(())
+                InsertionMode::InsertAtEnd
             }
         }
     }
 
-    pub fn pre_add_entity(&mut self, entity: Box<dyn Entity>) -> Option<()> {
-        match self.0.first() {
+    fn can_insert_at_start(&self, entity: &Box<dyn Entity>)-> InsertionMode {
+         match self.0.first() {
             Some(first) => {
                 if first.start() == entity.end() {
-                    self.0.insert(0, entity);
-                    Some(())
+                    InsertionMode::InsertAtStart
                 } else if first.start() == entity.start() {
-                    self.0.insert(0, entity.revert());
-                    Some(())
+                    InsertionMode::InsertAtStart
                 } else {
-                    None
+                    InsertionMode::RevertAndInsertAtStart
                 }
             }
             None => {
-                self.0.insert(0, entity);
-                Some(())
+                InsertionMode::None
             }
+        }
+    }
+
+    pub fn add_entity(&mut self, entity: Box<dyn Entity>) -> Result<(), MultilineError> {
+        match self.can_insert_at_start(&entity) {
+            InsertionMode::InsertAtEnd => {
+                self.0.push(entity);
+                Ok(())
+            }
+            InsertionMode::RevertAndInsertAtEnd => {
+                self.0.push(entity.revert());
+                Ok(())
+            }
+            InsertionMode::InsertAtStart => {
+                self.0.insert(0, entity);
+                Ok(())
+            }
+            InsertionMode::RevertAndInsertAtStart => {
+                self.0.insert(0, entity.revert());
+                Ok(())
+            }
+            InsertionMode::None => Err(MultilineError::NotContiguousEntities)
         }
     }
 }

@@ -24,7 +24,7 @@
                 "--dxf", "testdata/file.dxf", 
                 "--security-z", "5.0", 
                 "--feed", "100.0", 
-                "--entities", "point,arc",
+                "--entities", "line,arc",
             ],
             "cwd": "${workspaceFolder}"
         },
@@ -51,6 +51,28 @@
                 "--entities", "point,line",
             ],
             "cwd": "${workspaceFolder}"
-        }
+        },
+        {
+            "name": "Info",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=gcode",
+                    "--package=gcode"
+                ],
+                "filter": {
+                    "name": "gcode",
+                    "kind": "bin"
+                },
+            },
+            "args": [
+                "info", 
+                "--dxf", "testdata/file.dxf", 
+                "--entities", "line,arc",
+            ],
+            "cwd": "${workspaceFolder}"
+        },
     ]
 }

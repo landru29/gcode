@@ -1,20 +1,27 @@
-use std::cmp::Ordering;
-
-use crate::models::{
-    finisher::Finisher, gcode::GCodePathOptions, geometry::{Entity, EntitySet}, goto::Goto, line::Line, point::Point, starter::Starter
+use crate::{
+    application::sort::nearest_entity, 
+    models::{
+        entity::{Entity, EntitySet},
+        finisher::Finisher,
+        gcode::GCodePathOptions,
+        goto::Goto,
+        line::Line,
+        point::Point,
+        starter::Starter,
+    }
 };
 
-fn build_drill_sequence(entities: Vec<Box<dyn Entity>>, security_z: f64, deep: f64) -> EntitySet {
-    let mut output = EntitySet::new();
+fn build_drill_sequence(entities: impl IntoIterator<Item = Box<dyn Entity>>, security_z: f64, deep: f64) -> EntitySet {
+    let mut output = EntitySet::default();
 
-    let mut point_list: Vec<Point> = entities.iter().map(|element| element.end().with_z(-deep)).collect();
+    let mut point_list: Vec<Point> = entities.into_iter().map(|element| element.end().with_z(-deep)).collect();
 
-    output.push(Box::new(Starter::new()));
+    output.push(Box::new(Starter::default()));
 
     let mut reference = Point::new(0.0, 0.0, 0.0, "".to_string());
 
     while point_list.len()>0 {
-        point_list.sort_by(|a, b| nearest_point(&reference, &a, &b));
+        point_list.sort_by(|a, b| nearest_entity(&reference, a, b));
 
         let target = point_list.pop().unwrap();
 
@@ -27,30 +34,22 @@ fn build_drill_sequence(entities: Vec<Box<dyn Entity>>, security_z: f64, deep: f
         output.push(Box::new(Line::new(starting_point, target, "".to_string())));
     }
 
-    output.push(Box::new(Finisher::new()));
+    output.push(Box::new(Finisher::default()));
     
     output
 }
 
-pub fn drill_gcode(entities: Vec<Box<dyn Entity>>, security_z: f64, feed: f64, deep: f64) -> String {
+pub fn drill_gcode(entities: impl IntoIterator<Item = Box<dyn Entity>>, security_z: f64, feed: f64, deep: f64) -> String {
     let entity_set = build_drill_sequence(entities, security_z, deep);
 
-    entity_set.gcode_path(GCodePathOptions::new(&vec![
-        GCodePathOptions::with_security_z(&security_z),
-        GCodePathOptions::with_feed(&feed),
-        GCodePathOptions::with_goto_start(),
-        GCodePathOptions::with_x(),
-        GCodePathOptions::with_y(),
-        GCodePathOptions::with_z(),
-    ]))
+    entity_set.gcode_path(
+        GCodePathOptions::default()
+            .with_security_z(security_z)
+            .with_feed(feed)
+            .with_goto_start()
+            .with_x()
+            .with_y()
+            .with_z()
+    )
 }
 
-fn nearest_point(reference: &Point, a: &Point, b: &Point) -> Ordering {
-    if reference.square_distance(a) > reference.square_distance(b) {
-        Ordering::Greater
-    } else if reference.square_distance(a) < reference.square_distance(b) {
-        Ordering::Less
-    } else {
-        Ordering::Equal
-    }
-}

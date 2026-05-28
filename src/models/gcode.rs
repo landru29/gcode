@@ -1,4 +1,4 @@
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct GCodePathOptions{
     pub feed: f64,
     pub security_z: f64,
@@ -9,69 +9,40 @@ pub struct GCodePathOptions{
     pub arc_center: Option<(f64, f64)>,
 }
 
-type PathConfigurator = Box<dyn Fn(&mut GCodePathOptions)>;
-
 impl GCodePathOptions {
-    pub fn new(configurators: &Vec<PathConfigurator>) -> Self {
-        let mut options = Self {
-            feed: 0.0,
-            goto_start: false,
-            with_x: false,
-            with_y: false,
-            with_z: false,
-            security_z: 0.0,
-            arc_center: None,
-        };
-        for configurator in configurators {
-            configurator(&mut options);
-        }
-        options
+    pub fn with_arc_center(mut self, x: f64, y: f64) -> Self {
+        self.arc_center = Some((x, y));
+        self
     }
 
-    pub fn with_arc_center(x: &f64, y: &f64) -> PathConfigurator {
-        let x = x.clone();
-        let y = y.clone();
-        Box::new(move |options: &mut Self| {
-            options.arc_center = Some((x, y));
-        })
+    pub fn with_feed(mut self, feed: f64) -> Self {
+        self.feed = feed;
+        self
     }
 
-    pub fn with_feed(feed: &f64) -> PathConfigurator {
-        let feed = feed.clone();
-        Box::new(move |options: &mut Self| {
-            options.feed = feed;
-        })
+    pub fn with_security_z(mut self, security_z: f64) -> Self {
+        self.security_z = security_z;
+        self
     }
 
-    pub fn with_security_z(security_z: &f64) -> PathConfigurator {
-        let security_z = security_z.clone();
-        Box::new(move |options: &mut Self| {
-            options.security_z = security_z;
-        })
+    pub fn with_x(mut self) -> Self {
+        self.with_x = true;
+        self
     }
 
-    pub fn with_x() -> PathConfigurator {
-        Box::new(|options: &mut Self| {
-            options.with_x = true;
-        })
+    pub fn with_y(mut self) -> Self {
+        self.with_y = true;
+        self
     }
 
-    pub fn with_y() -> PathConfigurator {
-        Box::new(|options: &mut Self| {
-            options.with_y = true;
-        })
+    pub fn with_z(mut self) -> Self {
+        self.with_z = true;
+        self
     }
 
-    pub fn with_z() -> PathConfigurator {
-        Box::new(|options: &mut Self| {
-            options.with_z = true;
-        })
-    }
-
-    pub fn with_goto_start() -> PathConfigurator {
-        Box::new(|options: &mut Self| {
-            options.goto_start = true;
-        })
+    pub fn with_goto_start(mut self) -> Self {
+        self.goto_start = true;
+        self
     }
 
     pub fn transition_to(&self, point: &super::point::Point) -> String {

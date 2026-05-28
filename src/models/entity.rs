@@ -1,3 +1,5 @@
+use crate::models::multiline::Multiline;
+
 use super::gcode::GCodePathOptions;
 use super::point::Point;
 
@@ -8,13 +10,10 @@ pub trait Entity {
     fn gcode_path(&self, options: GCodePathOptions) -> String;
 }
 
+#[derive(Default)]
 pub struct EntitySet(Vec<Box<dyn Entity>>);
 
 impl EntitySet {
-    pub fn new() -> Self {
-        Self(Vec::new())
-    }
-
     pub fn push(&mut self, entity: Box<dyn Entity>) {
         self.0.push(entity);
     }
@@ -36,7 +35,4 @@ impl EntitySet {
 }
 
 
-pub trait Filtered {
-    fn layer(&self) -> String;
-    fn entity_type(&self) -> String;
-}
+

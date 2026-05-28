@@ -1,9 +1,10 @@
 use super::{
-    geometry::{Entity, Filtered},
+    entity::Entity,
+    filter::Filtered,
     gcode::GCodePathOptions,
 };
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Default)]
 pub struct Point {
     pub layer: String,
     pub x: f64,
@@ -16,10 +17,14 @@ impl Point {
         Self { x, y, z, layer }
     }
 
-    pub fn square_distance(&self, other: &Self) -> f64 {
-        (self.x - other.x) * (self.x - other.x) +
-        (self.y - other.y) * (self.y - other.y) +
-        (self.z - other.z) * (self.z - other.z)
+    pub fn square_distance<T: Entity>(&self, other: &T) -> f64 {
+        (self.x - other.start().x) * (self.x - other.start().x) +
+        (self.y - other.start().y) * (self.y - other.start().y) +
+        (self.z - other.start().z) * (self.z - other.start().z).min(
+            (self.x - other.end().x) * (self.x - other.end().x) +
+            (self.y - other.end().y) * (self.y - other.end().y) +
+            (self.z - other.end().z) * (self.z - other.end().z)
+        )
     }
 
     pub fn with_z(&self, z: f64) -> Self {
