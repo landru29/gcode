@@ -69,6 +69,10 @@ enum Commands {
         /// Depth for cutting moves
         #[arg(long, default_value_t = 1.0)]
         deep: f64,
+
+        /// Step for cutting moves
+        #[arg(long, value_parser = clap::value_parser!(f64))]
+        step: Option<f64>,
     },
 
     /// Engrave a path
@@ -98,8 +102,8 @@ enum Commands {
         deep: f64,
 
         /// Step for cutting moves
-        #[arg(long, default_value_t = 0.5)]
-        step: f64,
+        #[arg(long, value_parser = clap::value_parser!(f64))]
+        step: Option<f64>,
     },
 }
 
@@ -132,14 +136,14 @@ pub fn start_cli() -> Result<(), CliError> {
             let mut dxf_file = DxfFile::new(dxf).map_err(|e| CliError::GenericError(format!("{}", e)))?;
             dxf_file.load().map_err(|e| CliError::GenericError(format!("{}", e)))?;
             let filtered_file = dxf_file.filter_layer(layer, entities).map_err(|e| CliError::GenericError(format!("{}", e)))?;
-            println!("{}", path_gcode(&filtered_file.entities(), security_z, feed, deep));
+            println!("{}", path_gcode(&filtered_file.entities(), security_z, feed, deep, step.unwrap_or(deep)));
             Ok(())
         }
-        Commands::Drill {dxf, security_z, feed, layer, entities, deep} => {
+        Commands::Drill {dxf, security_z, feed, layer, entities, deep, step} => {
             let mut dxf_file = DxfFile::new(dxf).map_err(|e| CliError::GenericError(format!("{}", e)))?;
             dxf_file.load().map_err(|e| CliError::GenericError(format!("{}", e)))?;
             let filtered_file = dxf_file.filter_layer(layer, entities).map_err(|e| CliError::GenericError(format!("{}", e)))?;
-            println!("{}", drill_gcode(filtered_file.entities(), security_z, feed, deep));
+            println!("{}", drill_gcode(filtered_file.entities(), security_z, feed, deep, step.unwrap_or(deep)));
             Ok(())
         }
     }

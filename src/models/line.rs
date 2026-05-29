@@ -1,3 +1,5 @@
+use std::fmt;
+
 use super::{
     point::Point,
     filter::Filtered,
@@ -25,3 +27,17 @@ impl Filtered for Line {
         "line".to_string()
     }
 }
+
+impl fmt::Display for Line {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.start.x == self.end.x && self.start.y == self.end.y {
+            write!(f, "Drill {:.3} -> {:.3}", self.start.z, self.end.z)
+        } else {
+            write!(f, "Line [{:.3}, {:.3}] -> [{:.3}, {:.3}]", 
+                self.start.x, self.start.y,
+                self.end.x, self.end.y,
+            )
+        }
+    }
+}
+

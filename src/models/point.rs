@@ -1,3 +1,5 @@
+use std::fmt;
+
 use super::{
     entity::Entity,
 };
@@ -6,7 +8,7 @@ use super::{
     filter::Filtered,
 };
 
-#[derive(Clone, PartialEq, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct Point {
     pub layer: String,
     pub x: f64,
@@ -28,13 +30,16 @@ impl Point {
             (self.z - other.end().z) * (self.z - other.end().z)
         )
     }
+}
 
-    pub fn with_z(&self, z: f64) -> Self {
-        let mut output = self.clone();
-        output.z = z;
-
-        output
+impl PartialEq for Point {
+    fn eq(&self, other: &Self) -> bool {
+        coordinate_equal(self.x , other.x) && coordinate_equal(self.y, other.y) && coordinate_equal(self.z, other.z)
     }
+}
+
+fn coordinate_equal(a: f64, b: f64) -> bool {
+    (a*10000.0).round() == (b*10000.0).round()
 }
 
 impl Filtered for Point {
@@ -44,5 +49,13 @@ impl Filtered for Point {
 
     fn entity_type(&self) -> String {
         "point".to_string()
+    }
+}
+
+impl fmt::Display for Point {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Point [{:.3}, {:.3}]", 
+            self.x, self.y,
+        )
     }
 }

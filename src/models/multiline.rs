@@ -1,3 +1,5 @@
+use std::fmt;
+
 use thiserror::Error;
 
 use crate::models::entity::Entity;
@@ -38,7 +40,7 @@ impl Multiline {
             Some(last) => {
                 if last.end() == entity.start() {
                     InsertionMode::InsertAtEnd
-                } else if last.end() == entity.end() {
+                } else if last.start() == entity.end() {
                     InsertionMode::RevertAndInsertAtEnd
                 } else {
                     self.can_insert_at_start(entity)
@@ -55,14 +57,14 @@ impl Multiline {
             Some(first) => {
                 if first.start() == entity.end() {
                     InsertionMode::InsertAtStart
-                } else if first.start() == entity.start() {
-                    InsertionMode::InsertAtStart
-                } else {
+                } else if first.end() == entity.start() {
                     InsertionMode::RevertAndInsertAtStart
+                } else {
+                    InsertionMode::None
                 }
             }
             None => {
-                InsertionMode::None
+                InsertionMode::InsertAtStart
             }
         }
     }
@@ -89,11 +91,36 @@ impl Multiline {
         }
     }
 
+    pub fn insert_at_start(&mut self, entity: Entity) -> Result<(), MultilineError> {
+        match self.can_insert_at_start(entity.clone()) {
+            InsertionMode::InsertAtStart => {
+                self.0.insert(0,entity.clone());
+                Ok(())
+            }
+            _ => Err(MultilineError::NotContiguousEntities)
+        }
+    }
+
     pub fn start(&self) -> crate::models::point::Point {
         self.0.first().unwrap().start()
     }
 
     pub fn end(&self) -> crate::models::point::Point {
         self.0.last().unwrap().end()
+    }
+
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+}
+
+impl fmt::Display for Multiline {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let details: String = self.0.iter().map(|element| format!("; * {}\n", element)).collect();
+
+        write!(f, "Multiline [{}]\n{}", 
+            self.len(),
+            details
+        )
     }
 }

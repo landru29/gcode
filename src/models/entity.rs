@@ -1,3 +1,5 @@
+use core::fmt;
+
 use super::{
     point::Point,
     arc::Arc,
@@ -15,6 +17,7 @@ pub enum Entity{
     Finisher,
     Multiline(Multiline),
     Goto(Point),
+    Comment(String),
 }
 
 impl Entity {
@@ -30,6 +33,7 @@ impl Entity {
             },
             Self::Starter => Point::default(),
             Self::Finisher => Point::default(),
+            Self::Comment(_) => Point::default(),
             Self::Multiline(multiline) => multiline.start(),
             Self::Goto(goto) => goto.clone(),
         }
@@ -47,6 +51,7 @@ impl Entity {
             },
             Self::Starter => Point::default(),
             Self::Finisher => Point::default(),
+            Self::Comment(_) => Point::default(),
             Self::Multiline(multiline) => multiline.end(),
             Self::Goto(goto) => goto.clone(),
         }
@@ -70,6 +75,7 @@ impl Entity {
             }),
             Self::Starter => Self::Starter,
             Self::Finisher => Self::Finisher,
+            Self::Comment(s) => Self::Comment(s.clone()),
             Self::Multiline(multiline) => {
                 let list: Vec<Entity> = multiline.clone().into();
                 let reversed = list.iter().rev().map(|e| e.revert()).collect::<Vec<_>>();
@@ -81,44 +87,46 @@ impl Entity {
 
     pub fn gcode_path(&self, gcode_options: super::gcode::GCodePathOptions) -> String {
         match self {
-            Entity::Line(line) => {
+            Self::Line(line) => {
                 format!(
-                    "{}G{} {}\n",
+                    "; {}\n{}G{} {}\n",
+                    line,
                     gcode_options.transition_to(&line.start),
                     if gcode_options.feed > 0.0 { "1" } else { "0" },
                     gcode_options.parameters_string(&line.end)
                 )
             },
-            Entity::Point(point) => {
+            Self::Point(point) => {
                 format!(
-                    "{}G{} {}\n",
+                    "; {}\n{}G{} {}\n",
+                    point,
                     gcode_options.transition_to(point),
                     if gcode_options.feed > 0.0 { "1" } else { "0" },
                     gcode_options.parameters_string(point)
                 )
             },
-            Entity::Arc(arc) => {
+            Self::Arc(arc) => {
                 arc.gcode_path(gcode_options.clone())
             },
-            Entity::Starter => {
-                format!("; starting\nG90\nG21\nG0 Z{:.3}\n", gcode_options.security_z)
+            Self::Starter => {
+                format!("; starting\nG90 ; Absolute coordinates\nG21 ; millimeters\n{}", gcode_options.optional_security())
             },
-            Entity::Finisher => {
-                format!("; ending\nG0 Z{:.3}\n", gcode_options.security_z)
+            Self::Finisher => {
+                format!("; ending\n{}G0 X0.000 Y0.000\n", gcode_options.optional_security())
             },
-            Entity::Multiline(multiline) => {
+            Self::Multiline(multiline) => {
                 let starter = gcode_options.transition_to(&self.start());
-                let list: Vec<Entity> = multiline.clone().into();
+                let list: Vec<Self> = multiline.clone().into();
                 let output: String = list
                             .iter()
-                            .map(|e| e.gcode_path(gcode_options.clone().without_goto_start()))
+                            .map(|e| e.gcode_path(gcode_options.clone().without_goto_start().without_security_z()))
                             .collect();
 
-                format!("{}{}", starter, output)
+                format!("; {}\n{}{}{}", multiline, starter, output, gcode_options.optional_security())
             },
-            Entity::Goto(goto) => {
+            Self::Goto(goto) => {
                 let starter = if gcode_options.goto_start {
-                    format!("G0 Z{:.3}\n", gcode_options.security_z)
+                    format!("{}", gcode_options.optional_security())
                 } else {
                     "".to_string()
                 };
@@ -127,11 +135,30 @@ impl Entity {
                 options.feed = 0.0;
 
                 format!(
-                    "{}G0 {}\n",
+                    "; Goto {}\n{}G0 {}\n",
+                    goto,
                     starter,
                     options.parameters_string(&goto)
                 )
             },
+            Self::Comment(s) => {
+                s.split('\n').map(|line| format!("; {}\n", line)).collect()
+            },
+        }
+    }
+}
+
+impl fmt::Display for Entity {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Line(line) => write!(f, "{}", line),
+            Self::Point(point) => write!(f, "{}", point),
+            Self::Arc(arc) => write!(f, "{}", arc),
+            Self::Starter => write!(f, "starter"),
+            Self::Finisher => write!(f, "finisher"),
+            Self::Multiline(multiline) => write!(f, "{}", multiline),
+            Self::Goto(goto) => write!(f, "{}", goto),
+            Self::Comment(s) => write!(f, "{}", s),
         }
     }
 }

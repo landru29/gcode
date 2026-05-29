@@ -25,6 +25,8 @@
                 "--security-z", "5.0", 
                 "--feed", "100.0", 
                 "--entities", "line,arc",
+                "--deep", "10",
+                "--step", "3",
             ],
             "cwd": "${workspaceFolder}"
         },

@@ -1,3 +1,5 @@
+use std::fmt;
+
 use super::{
     filter::Filtered,
     point::Point,
@@ -15,12 +17,12 @@ pub struct Arc {
 }
 
 impl Arc {
-    pub fn new(center: Point, radius: f64, start_angle: f64, end_angle: f64, clockwise: bool, layer: String) -> Self {
+    pub fn new(center: Point, radius: f64, start_angle_degree: f64, end_angle_degree: f64, clockwise: bool, layer: String) -> Self {
         Self {
             center,
             radius,
-            start_angle,
-            end_angle,
+            start_angle: start_angle_degree * std::f64::consts::PI/180.0,
+            end_angle: end_angle_degree * std::f64::consts::PI/180.0,
             clockwise,
             layer,
         }
@@ -66,7 +68,8 @@ impl Arc {
                 layer: self.layer.clone(),
             };
             format!(
-                "{}{}",
+                "; {}\n{}{}",
+                self,
                 arc1.gcode_path(gcode_options.clone()),
                 arc2.gcode_path(gcode_options.clone())
             )
@@ -74,7 +77,8 @@ impl Arc {
             let i = self.center.x - self.start().x;
             let j = self.center.y - self.start().y;
             format!(
-                "{}{} {} I{:.3} J{:.3}\n",
+                "; {}\n{}{} {} I{:.3} J{:.3}\n",
+                self,
                 starter,
                 if self.clockwise { "G2" } else { "G3" },
                 gcode_options.parameters_string(&self.end()), 
@@ -93,4 +97,35 @@ impl Filtered for Arc {
         fn entity_type(&self) -> String {
         "arc".to_string()
     }
+}
+
+impl fmt::Display for Arc {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.start() == self.end() {
+            write!(
+                f, "Circle [{:.3}, {:.3}] @ {:.3}",
+                self.center.x, self.center.y , self.radius,
+            )
+        } else {
+            write!(f, "Arc [{:.3}, {:.3}] -> [{:.3}, {:.3}]", 
+                self.start().x, self.start().y,
+                self.end().x, self.end().y,
+            )
+        }
+    }
+}
+
+#[test]
+fn test_start_end() {
+    let arc = Arc::new(
+        Point::new(3.0, 2.0, 0.0, String::from("")),
+        2.0,
+        -90.0,
+        -180.0,
+        false,
+        String::from("")
+    );
+
+    assert_eq!(arc.start(), Point::new(3.0, 0.0, 0.0, String::from("")), "testing start point");
+    assert_eq!(arc.end(), Point::new(1.0, 2.0, 0.0, String::from("")), "testing end point");
 }
