@@ -68,7 +68,7 @@ impl Arc {
                 layer: self.layer.clone(),
             };
             format!(
-                "; {}\n{}{}",
+                "\n; {}\n{}{}",
                 self,
                 arc1.gcode_path(gcode_options.clone()),
                 arc2.gcode_path(gcode_options.clone())
@@ -77,7 +77,7 @@ impl Arc {
             let i = self.center.x - self.start().x;
             let j = self.center.y - self.start().y;
             format!(
-                "; {}\n{}{} {} I{:.3} J{:.3}\n",
+                "\n; {}\n{}{} {} I{:.3} J{:.3}\n",
                 self,
                 starter,
                 if self.clockwise { "G2" } else { "G3" },

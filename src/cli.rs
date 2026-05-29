@@ -1,7 +1,7 @@
 use clap::{Parser, Subcommand};
 
-use crate::application::drill::drill_gcode;
-use crate::application::path::path_gcode;
+use crate::application::drill::drill_sequence;
+use crate::application::path::path_sequence;
 use crate::errors::cli::CliError;
 use crate::models::entity::Entity;
 use crate::models::gcode::GCodePathOptions;
@@ -135,15 +135,35 @@ pub fn start_cli() -> Result<(), CliError> {
         Commands::Path { dxf, security_z, feed, layer, entities, deep, step } => {
             let mut dxf_file = DxfFile::new(dxf).map_err(|e| CliError::GenericError(format!("{}", e)))?;
             dxf_file.load().map_err(|e| CliError::GenericError(format!("{}", e)))?;
+            
             let filtered_file = dxf_file.filter_layer(layer, entities).map_err(|e| CliError::GenericError(format!("{}", e)))?;
-            println!("{}", path_gcode(&filtered_file.entities(), security_z, feed, deep, step.unwrap_or(deep)));
+            
+            let options = GCodePathOptions::default()
+                .with_security_z(security_z)
+                .with_feed(feed)
+                .with_goto_start()
+                .with_x()
+                .with_y()
+                .with_z();
+
+            println!("{}", path_sequence(filtered_file.entities()).generate_code(options, deep, step.unwrap_or(deep)));
             Ok(())
         }
         Commands::Drill {dxf, security_z, feed, layer, entities, deep, step} => {
             let mut dxf_file = DxfFile::new(dxf).map_err(|e| CliError::GenericError(format!("{}", e)))?;
             dxf_file.load().map_err(|e| CliError::GenericError(format!("{}", e)))?;
+            
             let filtered_file = dxf_file.filter_layer(layer, entities).map_err(|e| CliError::GenericError(format!("{}", e)))?;
-            println!("{}", drill_gcode(filtered_file.entities(), security_z, feed, deep, step.unwrap_or(deep)));
+            
+            let options = GCodePathOptions::default()
+                .with_security_z(security_z)
+                .with_feed(feed)
+                .with_goto_start()
+                .with_x()
+                .with_y()
+                .with_z();
+
+            println!("{}", drill_sequence(filtered_file.entities()).generate_code(options, deep, step.unwrap_or(deep)));
             Ok(())
         }
     }

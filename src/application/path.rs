@@ -3,51 +3,20 @@ use crate::{
     models::{
         entity::Entity,
         entity_set::EntitySet,
-        gcode::{GCodePathOptions, step_array},
         multiline::{InsertionMode, Multiline},
         point::Point,
     }
 };
 
 
-pub fn path_gcode(entities: &EntitySet, security_z: f64, feed: f64, deep: f64, step: f64) -> String {
-    let mut output = EntitySet::default();
+pub fn path_sequence(entities: EntitySet) -> EntitySet {
+    let mut output: EntitySet = EntitySet::default();
 
-    for multiline in  build_path(entities) {
+    for multiline in  build_path(&entities) {
         output.push(Entity::Multiline(multiline));
     }
 
-    let options = GCodePathOptions::default()
-            .with_security_z(security_z)
-            .with_feed(feed)
-            .with_goto_start()
-            .with_x()
-            .with_y()
-            .with_z();
-
-    let deeps = step_array(deep, step);
-
-    let tooling: String = deeps
-        .iter()
-        .enumerate()
-        .map(|(index, this_deep)| {
-            format!(
-                "; **** #{:03} / {:03} Deep: {:.3} >>>>\n{}\n; <<<< #{:03} / {:03} ****\n\n", 
-                index+1, 
-                deeps.len(),
-                this_deep,
-                output.gcode_path(options.clone().with_override_z(-this_deep)),
-                index+1, 
-                deeps.len(),
-            )
-        }).collect();
-
-    format!("{}\n{}{}",
-        Entity::Starter.gcode_path(options.clone()),
-        tooling,
-        Entity::Finisher.gcode_path(options.clone()),
-    )
-
+    output
 }
 
 fn build_path(entities: &EntitySet) -> Vec<Multiline> {

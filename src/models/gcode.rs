@@ -61,11 +61,11 @@ impl GCodePathOptions {
         }
 
         let security = match self.security_z {
-            Some(z) => format!("G0 Z{:.3} ;security\n", z),
+            Some(z) => format!("; move tool\nG0 Z{:.3} ; security", z),
             _ => String::from(""),
         };
 
-        format!("{}G0 X{:.3} Y{:.3} ;transition\n", security, point.x, point.y)
+        format!("\n{}\nG0 X{:.3} Y{:.3} ;transition\n", security, point.x, point.y)
     }
 
 
@@ -96,22 +96,8 @@ impl GCodePathOptions {
     }
 
     pub fn optional_security(&self) -> String {
-        self.security_z.map_or(String::from(""), |z| format!("G0 Z{:.3} ; security\n", z))
+        self.security_z.map_or(String::from(""), |z| format!("\nG0 Z{:.3} ; security", z))
     }
 }
 
 
-// Utility function to generate an array of steps from 0 to deep with a given step size
-pub fn step_array(deep: f64, step: f64) -> Vec<f64> {
-    let mut steps = vec![];
-    let mut current = step;
-
-    while current < deep {
-        steps.push(current);
-        current += step;
-    }
-
-    steps.push(deep);
-
-    steps
-}

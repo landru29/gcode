@@ -27,6 +27,7 @@
                 "--entities", "line,arc",
                 "--deep", "10",
                 "--step", "3",
+                "--layer", "0"
             ],
             "cwd": "${workspaceFolder}"
         },

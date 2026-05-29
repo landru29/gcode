@@ -89,30 +89,32 @@ impl Entity {
         match self {
             Self::Line(line) => {
                 format!(
-                    "; {}\n{}G{} {}\n",
+                    "\n; {}{}\nG{} {}{}\n",
                     line,
                     gcode_options.transition_to(&line.start),
                     if gcode_options.feed > 0.0 { "1" } else { "0" },
-                    gcode_options.parameters_string(&line.end)
+                    gcode_options.parameters_string(&line.end),
+                    gcode_options.optional_security()
                 )
             },
             Self::Point(point) => {
                 format!(
-                    "; {}\n{}G{} {}\n",
+                    "\n; {}{}\nG{} {}{}\n",
                     point,
                     gcode_options.transition_to(point),
                     if gcode_options.feed > 0.0 { "1" } else { "0" },
-                    gcode_options.parameters_string(point)
+                    gcode_options.parameters_string(point),
+                    gcode_options.optional_security()
                 )
             },
             Self::Arc(arc) => {
                 arc.gcode_path(gcode_options.clone())
             },
             Self::Starter => {
-                format!("; starting\nG90 ; Absolute coordinates\nG21 ; millimeters\n{}", gcode_options.optional_security())
+                format!("\n; starting\nG90 ; Absolute coordinates\nG21 ; millimeters{}", gcode_options.optional_security())
             },
             Self::Finisher => {
-                format!("; ending\n{}G0 X0.000 Y0.000\n", gcode_options.optional_security())
+                format!("\n; ending\n{}\nG0 X0.000 Y0.000", gcode_options.optional_security())
             },
             Self::Multiline(multiline) => {
                 let starter = gcode_options.transition_to(&self.start());
@@ -122,7 +124,7 @@ impl Entity {
                             .map(|e| e.gcode_path(gcode_options.clone().without_goto_start().without_security_z()))
                             .collect();
 
-                format!("; {}\n{}{}{}", multiline, starter, output, gcode_options.optional_security())
+                format!("\n; {}{}{}{}\n", multiline, starter, output, gcode_options.optional_security())
             },
             Self::Goto(goto) => {
                 let starter = if gcode_options.goto_start {
@@ -135,7 +137,7 @@ impl Entity {
                 options.feed = 0.0;
 
                 format!(
-                    "; Goto {}\n{}G0 {}\n",
+                    "\n; Goto {}\n{}G0 {}\n",
                     goto,
                     starter,
                     options.parameters_string(&goto)
